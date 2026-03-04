@@ -43,8 +43,28 @@ export function updateMessageStatus(id: number, status: AaisMessage['status']) {
   const idx = messages.findIndex(m => m.id === id);
   if (idx !== -1) {
     messages[idx].status = status;
-    messages[idx].processed_at = new Date().toLocaleDateString('en-US');
+    messages[idx].processed_at = new Date().toISOString();
     saveMessages(messages);
   }
   return messages;
+}
+
+export function deleteMessage(id: number) {
+  const messages = getMessages().filter(m => m.id !== id);
+  saveMessages(messages);
+  return messages;
+}
+
+export function purgeOldProcessed(days = 7) {
+  const messages = getMessages();
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const filtered = messages.filter(m => {
+    if (m.status === 'pending') return true;
+    if (!m.processed_at) return true;
+    return new Date(m.processed_at).getTime() > cutoff;
+  });
+  if (filtered.length !== messages.length) {
+    saveMessages(filtered);
+  }
+  return filtered;
 }

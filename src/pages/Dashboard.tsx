@@ -1,0 +1,179 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { getMessages, updateMessageStatus, type AaisMessage } from "@/lib/messages";
+import { motion, AnimatePresence } from "framer-motion";
+import { FileText, Download, CheckCircle, XCircle, Wrench, AlertTriangle } from "lucide-react";
+
+const categoryColor: Record<string, string> = {
+  Suggestion: "bg-blue-100 text-blue-800",
+  Concern: "bg-yellow-100 text-yellow-800",
+  Feedback: "bg-purple-100 text-purple-800",
+  Confession: "bg-pink-100 text-pink-800",
+  Appreciation: "bg-green-100 text-green-800",
+};
+
+const Dashboard = () => {
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState<AaisMessage[]>([]);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("isAdmin") !== "true") {
+      navigate("/admin");
+      return;
+    }
+    setMessages(getMessages());
+  }, [navigate]);
+
+  const pending = messages.filter(m => m.status === "pending");
+  const processed = messages.filter(m => m.status !== "pending");
+  const approvedSolved = processed.filter(m => m.status === "approved" || m.status === "solved");
+  const rejectedUnsolved = processed.filter(m => m.status === "rejected" || m.status === "unsolved");
+
+  const handleAction = (id: number, status: AaisMessage["status"]) => {
+    const updated = updateMessageStatus(id, status);
+    setMessages([...updated]);
+  };
+
+  const isSolvable = (cat: string) => cat === "Suggestion" || cat === "Concern";
+
+  const FilePreview = ({ msg }: { msg: AaisMessage }) => {
+    if (!msg.file_base64) return null;
+    const dataUrl = `data:${msg.file_type};base64,${msg.file_base64}`;
+    if (msg.file_type?.startsWith("image/")) {
+      return <img src={dataUrl} alt="attachment" className="mt-3 max-h-48 rounded-lg border border-primary/20 object-contain" />;
+    }
+    return (
+      <a href={dataUrl} download={msg.file_name} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-primary hover:underline">
+        <FileText className="h-5 w-5" />
+        {msg.file_name}
+        <Download className="h-4 w-4" />
+      </a>
+    );
+  };
+
+  const StatusBadge = ({ status }: { status: string }) => {
+    const map: Record<string, { cls: string; label: string }> = {
+      approved: { cls: "bg-green-100 text-green-800", label: "✅ Approved" },
+      rejected: { cls: "bg-red-100 text-red-800", label: "❌ Rejected" },
+      solved: { cls: "bg-green-100 text-green-800", label: "✅ Solved" },
+      unsolved: { cls: "bg-red-100 text-red-800", label: "⚠️ Unsolved" },
+    };
+    const s = map[status] || { cls: "bg-gray-100 text-gray-800", label: status };
+    return <span className={`rounded-full px-3 py-1 text-xs font-bold ${s.cls}`}>{s.label}</span>;
+  };
+
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header />
+      <main className="flex-1 px-4 py-8">
+        <div className="container mx-auto max-w-3xl">
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-extrabold text-primary md:text-3xl">📊 Dashboard</h2>
+            <p className="text-sm text-muted-foreground">Manage incoming feedback and concerns</p>
+          </div>
+
+          {pending.length > 0 && (
+            <div className="mb-6 flex justify-center">
+              <span className="rounded-full bg-orange/20 px-4 py-1.5 text-sm font-bold text-orange">
+                <AlertTriangle className="mr-1 inline h-4 w-4" />
+                {pending.length} Pending
+              </span>
+            </div>
+          )}
+
+          <h3 className="mb-3 text-lg font-bold text-primary">📩 Submitted Anonymous Messages</h3>
+          <AnimatePresence>
+            {pending.length === 0 && (
+              <p className="mb-6 text-center text-sm text-muted-foreground">No pending messages.</p>
+            )}
+            {pending.map(msg => (
+              <motion.div
+                key={msg.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -200 }}
+                transition={{ duration: 0.35 }}
+                className="mb-4 rounded-xl bg-card p-5 shadow-md card-green-border"
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${categoryColor[msg.category] || "bg-gray-100 text-gray-800"}`}>
+                    {msg.category}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{msg.created_at}</span>
+                </div>
+                <p className="mb-2 text-sm leading-relaxed">{msg.message}</p>
+                <FilePreview msg={msg} />
+                <div className="mt-4 flex gap-2">
+                  {isSolvable(msg.category) ? (
+                    <>
+                      <button onClick={() => handleAction(msg.id, "solved")} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90">
+                        <Wrench className="h-3.5 w-3.5" /> Solve
+                      </button>
+                      <button onClick={() => handleAction(msg.id, "unsolved")} className="flex items-center gap-1 rounded-lg bg-destructive/80 px-4 py-2 text-xs font-bold text-destructive-foreground transition hover:opacity-90">
+                        <XCircle className="h-3.5 w-3.5" /> Unsolved
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => handleAction(msg.id, "approved")} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90">
+                        <CheckCircle className="h-3.5 w-3.5" /> Approve
+                      </button>
+                      <button onClick={() => handleAction(msg.id, "rejected")} className="flex items-center gap-1 rounded-lg bg-destructive/80 px-4 py-2 text-xs font-bold text-destructive-foreground transition hover:opacity-90">
+                        <XCircle className="h-3.5 w-3.5" /> Reject
+                      </button>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          <h3 className="mb-3 mt-8 text-lg font-bold text-primary">📜 History</h3>
+          <p className="mb-4 text-sm text-muted-foreground">Recently processed items</p>
+
+          {approvedSolved.length > 0 && (
+            <>
+              <h4 className="mb-2 text-sm font-bold text-green-700">✅ Approved / Solved</h4>
+              {approvedSolved.map(msg => (
+                <div key={msg.id} className="mb-3 rounded-lg bg-card p-4 shadow-sm card-green-border">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${categoryColor[msg.category] || ""}`}>{msg.category}</span>
+                    <StatusBadge status={msg.status} />
+                    <span className="text-xs text-muted-foreground">{msg.processed_at}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{msg.message}</p>
+                </div>
+              ))}
+            </>
+          )}
+
+          {rejectedUnsolved.length > 0 && (
+            <>
+              <h4 className="mb-2 mt-4 text-sm font-bold text-red-700">❌ Rejected / Unsolved</h4>
+              {rejectedUnsolved.map(msg => (
+                <div key={msg.id} className="mb-3 rounded-lg bg-card p-4 shadow-sm card-green-border">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${categoryColor[msg.category] || ""}`}>{msg.category}</span>
+                    <StatusBadge status={msg.status} />
+                    <span className="text-xs text-muted-foreground">{msg.processed_at}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{msg.message}</p>
+                </div>
+              ))}
+            </>
+          )}
+
+          {processed.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground">No processed items yet.</p>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default Dashboard;

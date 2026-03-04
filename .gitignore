@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+<<<<<<< HEAD
 # Dependencies / build output
 node_modules
 dist
@@ -28,11 +29,24 @@ coverage
 !.vscode/extensions.json
 .idea
 *.iml
+=======
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+<<<<<<< HEAD
 
 # macOS junk
 .DS_Store
@@ -70,3 +84,5 @@ coverage/
 # Supabase / database (if you ever add local files)
 supabase/migrations/
 supabase/seed.sql
+=======
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89

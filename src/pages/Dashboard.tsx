@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+<<<<<<< HEAD
 import { supabase } from "@/lib/supabase"; // ← your Supabase client
+=======
+import { getMessages, updateMessageStatus, deleteMessage, purgeOldProcessed, type AaisMessage } from "@/lib/messages";
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Download, CheckCircle, XCircle, Wrench, AlertTriangle, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +21,7 @@ const categoryColor: Record<string, string> = {
 
 const PREVIEW_COUNT = 3;
 
+<<<<<<< HEAD
 interface AaisMessage {
   id: string; // uuid from Supabase
   category: string;
@@ -34,10 +39,16 @@ const Dashboard = () => {
   const [approvedSolved, setApprovedSolved] = useState<AaisMessage[]>([]);
   const [rejectedUnsolved, setRejectedUnsolved] = useState<AaisMessage[]>([]);
   const [loading, setLoading] = useState(true);
+=======
+const Dashboard = () => {
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState<AaisMessage[]>([]);
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
   const [showAllPending, setShowAllPending] = useState(false);
   const [showAllApproved, setShowAllApproved] = useState(false);
   const [showAllRejected, setShowAllRejected] = useState(false);
 
+<<<<<<< HEAD
   const fetchMessages = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -59,11 +70,14 @@ const Dashboard = () => {
     setLoading(false);
   };
 
+=======
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
   useEffect(() => {
     if (sessionStorage.getItem("isAdmin") !== "true") {
       navigate("/admin");
       return;
     }
+<<<<<<< HEAD
 
     fetchMessages();
 
@@ -114,11 +128,33 @@ const Dashboard = () => {
     } else {
       toast.success("Message deleted from history.");
     }
+=======
+    // Auto-purge history older than 7 days
+    const cleaned = purgeOldProcessed(7);
+    setMessages(cleaned);
+  }, [navigate]);
+
+  const pending = messages.filter(m => m.status === "pending");
+  const processed = messages.filter(m => m.status !== "pending");
+  const approvedSolved = processed.filter(m => m.status === "approved" || m.status === "solved");
+  const rejectedUnsolved = processed.filter(m => m.status === "rejected" || m.status === "unsolved");
+
+  const handleAction = (id: number, status: AaisMessage["status"]) => {
+    const updated = updateMessageStatus(id, status);
+    setMessages([...updated]);
+  };
+
+  const handleDelete = (id: number) => {
+    const updated = deleteMessage(id);
+    setMessages([...updated]);
+    toast.success("Message deleted from history.");
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
   };
 
   const isSolvable = (cat: string) => cat === "Suggestion" || cat === "Concern";
 
   const FilePreview = ({ msg }: { msg: AaisMessage }) => {
+<<<<<<< HEAD
     if (!msg.file_url) return null;
 
     if (msg.file_type?.startsWith("image/")) {
@@ -141,6 +177,17 @@ const Dashboard = () => {
       >
         <FileText className="h-5 w-5" />
         View/Download File
+=======
+    if (!msg.file_base64) return null;
+    const dataUrl = `data:${msg.file_type};base64,${msg.file_base64}`;
+    if (msg.file_type?.startsWith("image/")) {
+      return <img src={dataUrl} alt="attachment" className="mt-3 max-h-48 rounded-lg border border-primary/20 object-contain" />;
+    }
+    return (
+      <a href={dataUrl} download={msg.file_name} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-primary hover:underline">
+        <FileText className="h-5 w-5" />
+        {msg.file_name}
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
         <Download className="h-4 w-4" />
       </a>
     );
@@ -152,7 +199,10 @@ const Dashboard = () => {
       rejected: { cls: "bg-red-100 text-red-800", label: "❌ Rejected" },
       solved: { cls: "bg-green-100 text-green-800", label: "✅ Solved" },
       unsolved: { cls: "bg-red-100 text-red-800", label: "⚠️ Unsolved" },
+<<<<<<< HEAD
       pending: { cls: "bg-orange-100 text-orange-800", label: "⏳ Pending" },
+=======
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
     };
     const s = map[status] || { cls: "bg-gray-100 text-gray-800", label: status };
     return <span className={`rounded-full px-3 py-1 text-xs font-bold ${s.cls}`}>{s.label}</span>;
@@ -161,7 +211,12 @@ const Dashboard = () => {
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
+<<<<<<< HEAD
     return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("en-US");
+=======
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-US");
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
   };
 
   const renderShowMore = (
@@ -192,11 +247,17 @@ const Dashboard = () => {
   const HistoryCard = ({ msg }: { msg: AaisMessage }) => (
     <div className="mb-3 rounded-lg bg-card p-4 shadow-sm card-green-border">
       <div className="flex flex-wrap items-center gap-2">
+<<<<<<< HEAD
         <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${categoryColor[msg.category] || ""}`}>
           {msg.category}
         </span>
         <StatusBadge status={msg.status} />
         <span className="text-xs text-muted-foreground">Submitted: {formatDate(msg.created_at)}</span>
+=======
+        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${categoryColor[msg.category] || ""}`}>{msg.category}</span>
+        <StatusBadge status={msg.status} />
+        <span className="text-xs text-muted-foreground">Submitted: {msg.created_at}</span>
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
         {msg.processed_at && (
           <span className="text-xs text-muted-foreground">· Processed: {formatDate(msg.processed_at)}</span>
         )}
@@ -213,6 +274,7 @@ const Dashboard = () => {
     </div>
   );
 
+<<<<<<< HEAD
   const visiblePending = showAllPending ? pendingMessages : pendingMessages.slice(0, PREVIEW_COUNT);
   const visibleApproved = showAllApproved ? approvedSolved : approvedSolved.slice(0, PREVIEW_COUNT);
   const visibleRejected = showAllRejected ? rejectedUnsolved : rejectedUnsolved.slice(0, PREVIEW_COUNT);
@@ -225,6 +287,12 @@ const Dashboard = () => {
     );
   }
 
+=======
+  const visiblePending = showAllPending ? pending : pending.slice(0, PREVIEW_COUNT);
+  const visibleApproved = showAllApproved ? approvedSolved : approvedSolved.slice(0, PREVIEW_COUNT);
+  const visibleRejected = showAllRejected ? rejectedUnsolved : rejectedUnsolved.slice(0, PREVIEW_COUNT);
+
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
@@ -235,21 +303,36 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground">Manage incoming feedback and concerns</p>
           </div>
 
+<<<<<<< HEAD
           {pendingMessages.length > 0 && (
             <div className="mb-6 flex justify-center">
               <span className="rounded-full bg-orange/20 px-4 py-1.5 text-sm font-bold text-orange">
                 <AlertTriangle className="mr-1 inline h-4 w-4" />
                 {pendingMessages.length} Pending
+=======
+          {pending.length > 0 && (
+            <div className="mb-6 flex justify-center">
+              <span className="rounded-full bg-orange/20 px-4 py-1.5 text-sm font-bold text-orange">
+                <AlertTriangle className="mr-1 inline h-4 w-4" />
+                {pending.length} Pending
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
               </span>
             </div>
           )}
 
           <h3 className="mb-3 text-lg font-bold text-primary">📩 Submitted Anonymous Messages</h3>
           <AnimatePresence>
+<<<<<<< HEAD
             {pendingMessages.length === 0 && (
               <p className="mb-6 text-center text-sm text-muted-foreground">No pending messages.</p>
             )}
             {visiblePending.map((msg) => (
+=======
+            {pending.length === 0 && (
+              <p className="mb-6 text-center text-sm text-muted-foreground">No pending messages.</p>
+            )}
+            {visiblePending.map(msg => (
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
               <motion.div
                 key={msg.id}
                 layout
@@ -263,13 +346,18 @@ const Dashboard = () => {
                   <span className={`rounded-full px-3 py-1 text-xs font-bold ${categoryColor[msg.category] || "bg-gray-100 text-gray-800"}`}>
                     {msg.category}
                   </span>
+<<<<<<< HEAD
                   <span className="text-xs text-muted-foreground">{formatDate(msg.created_at)}</span>
+=======
+                  <span className="text-xs text-muted-foreground">{msg.created_at}</span>
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
                 </div>
                 <p className="mb-2 text-sm leading-relaxed">{msg.message}</p>
                 <FilePreview msg={msg} />
                 <div className="mt-4 flex gap-2">
                   {isSolvable(msg.category) ? (
                     <>
+<<<<<<< HEAD
                       <button
                         onClick={() => handleAction(msg.id, "solved")}
                         className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90"
@@ -280,11 +368,18 @@ const Dashboard = () => {
                         onClick={() => handleAction(msg.id, "unsolved")}
                         className="flex items-center gap-1 rounded-lg bg-destructive/80 px-4 py-2 text-xs font-bold text-destructive-foreground transition hover:opacity-90"
                       >
+=======
+                      <button onClick={() => handleAction(msg.id, "solved")} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90">
+                        <Wrench className="h-3.5 w-3.5" /> Solve
+                      </button>
+                      <button onClick={() => handleAction(msg.id, "unsolved")} className="flex items-center gap-1 rounded-lg bg-destructive/80 px-4 py-2 text-xs font-bold text-destructive-foreground transition hover:opacity-90">
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
                         <XCircle className="h-3.5 w-3.5" /> Unsolved
                       </button>
                     </>
                   ) : (
                     <>
+<<<<<<< HEAD
                       <button
                         onClick={() => handleAction(msg.id, "approved")}
                         className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90"
@@ -295,6 +390,12 @@ const Dashboard = () => {
                         onClick={() => handleAction(msg.id, "rejected")}
                         className="flex items-center gap-1 rounded-lg bg-destructive/80 px-4 py-2 text-xs font-bold text-destructive-foreground transition hover:opacity-90"
                       >
+=======
+                      <button onClick={() => handleAction(msg.id, "approved")} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition hover:opacity-90">
+                        <CheckCircle className="h-3.5 w-3.5" /> Approve
+                      </button>
+                      <button onClick={() => handleAction(msg.id, "rejected")} className="flex items-center gap-1 rounded-lg bg-destructive/80 px-4 py-2 text-xs font-bold text-destructive-foreground transition hover:opacity-90">
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
                         <XCircle className="h-3.5 w-3.5" /> Reject
                       </button>
                     </>
@@ -303,16 +404,27 @@ const Dashboard = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+<<<<<<< HEAD
           {renderShowMore(pendingMessages.length, showAllPending, () => setShowAllPending(!showAllPending))}
 
           <h3 className="mb-3 mt-8 text-lg font-bold text-primary">📜 History</h3>
           <p className="mb-4 text-sm text-muted-foreground">Recently processed items</p>
+=======
+          {renderShowMore(pending.length, showAllPending, () => setShowAllPending(!showAllPending))}
+
+          <h3 className="mb-3 mt-8 text-lg font-bold text-primary">📜 History</h3>
+          <p className="mb-4 text-sm text-muted-foreground">Recently processed items · Auto-deleted after 7 days</p>
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
 
           {approvedSolved.length > 0 && (
             <>
               <h4 className="mb-2 text-sm font-bold text-green-700">✅ Approved / Solved</h4>
               <div className={showAllApproved ? "max-h-[500px] overflow-y-auto rounded-lg pr-1" : ""}>
+<<<<<<< HEAD
                 {visibleApproved.map((msg) => (
+=======
+                {visibleApproved.map(msg => (
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
                   <HistoryCard key={msg.id} msg={msg} />
                 ))}
               </div>
@@ -324,7 +436,11 @@ const Dashboard = () => {
             <>
               <h4 className="mb-2 mt-4 text-sm font-bold text-red-700">❌ Rejected / Unsolved</h4>
               <div className={showAllRejected ? "max-h-[500px] overflow-y-auto rounded-lg pr-1" : ""}>
+<<<<<<< HEAD
                 {visibleRejected.map((msg) => (
+=======
+                {visibleRejected.map(msg => (
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
                   <HistoryCard key={msg.id} msg={msg} />
                 ))}
               </div>
@@ -332,7 +448,11 @@ const Dashboard = () => {
             </>
           )}
 
+<<<<<<< HEAD
           {approvedSolved.length === 0 && rejectedUnsolved.length === 0 && (
+=======
+          {processed.length === 0 && (
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
             <p className="text-center text-sm text-muted-foreground">No processed items yet.</p>
           )}
         </div>
@@ -342,4 +462,8 @@ const Dashboard = () => {
   );
 };
 
+<<<<<<< HEAD
 export default Dashboard;
+=======
+export default Dashboard;
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89

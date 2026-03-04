@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 const Admin = () => {
   const [password, setPassword] = useState("");
+<<<<<<< HEAD
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -18,7 +19,7 @@ const Admin = () => {
 
     setIsLoading(true);
 
-    // Simulate a tiny delay for realism (optional – you can remove setTimeout later if going real auth)
+    // Simulate a tiny delay for realism (optional)
     setTimeout(() => {
       if (password === "admin123") {
         sessionStorage.setItem("isAdmin", "true");
@@ -30,6 +31,17 @@ const Admin = () => {
       }
       setIsLoading(false);
     }, 300);
+=======
+  const navigate = useNavigate();
+
+  const handleLogin = () => {
+    if (password === "admin123") {
+      sessionStorage.setItem("isAdmin", "true");
+      navigate("/dashboard");
+    } else {
+      toast.error("Incorrect password");
+    }
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
   };
 
   return (
@@ -48,6 +60,7 @@ const Admin = () => {
             type="password"
             placeholder="Enter admin password"
             value={password}
+<<<<<<< HEAD
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             disabled={isLoading}
@@ -61,6 +74,17 @@ const Admin = () => {
             }`}
           >
             {isLoading ? "Logging in..." : "Login"}
+=======
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleLogin()}
+            className="mb-4 w-full rounded-lg border-2 border-primary/30 bg-card px-4 py-2.5 text-sm outline-none transition focus:border-primary"
+          />
+          <button
+            onClick={handleLogin}
+            className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground shadow transition hover:opacity-90 active:scale-[0.98]"
+          >
+            Login
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89
           </button>
         </div>
       </main>
@@ -69,4 +93,8 @@ const Admin = () => {
   );
 };
 
+<<<<<<< HEAD
 export default Admin;
+=======
+export default Admin;
+>>>>>>> 9afc44d0c8ffebbb5b60b3b379e54663283bde89

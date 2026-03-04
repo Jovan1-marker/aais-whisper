@@ -4,7 +4,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getMessages, updateMessageStatus, type AaisMessage } from "@/lib/messages";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Download, CheckCircle, XCircle, Wrench, AlertTriangle } from "lucide-react";
+import { FileText, Download, CheckCircle, XCircle, Wrench, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const categoryColor: Record<string, string> = {
   Suggestion: "bg-blue-100 text-blue-800",
@@ -14,9 +15,14 @@ const categoryColor: Record<string, string> = {
   Appreciation: "bg-green-100 text-green-800",
 };
 
+const PREVIEW_COUNT = 3;
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<AaisMessage[]>([]);
+  const [showAllPending, setShowAllPending] = useState(false);
+  const [showAllApproved, setShowAllApproved] = useState(false);
+  const [showAllRejected, setShowAllRejected] = useState(false);
 
   useEffect(() => {
     if (sessionStorage.getItem("isAdmin") !== "true") {
@@ -64,6 +70,50 @@ const Dashboard = () => {
     return <span className={`rounded-full px-3 py-1 text-xs font-bold ${s.cls}`}>{s.label}</span>;
   };
 
+  const renderShowMore = (
+    total: number,
+    isExpanded: boolean,
+    toggle: () => void
+  ) => {
+    const remaining = total - PREVIEW_COUNT;
+    if (remaining <= 0) return null;
+    return (
+      <button
+        onClick={toggle}
+        className="mx-auto mt-2 mb-4 flex items-center gap-1.5 rounded-lg border border-primary/30 bg-accent/50 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-accent"
+      >
+        {isExpanded ? (
+          <>
+            <ChevronUp className="h-4 w-4" /> Show Less
+          </>
+        ) : (
+          <>
+            <ChevronDown className="h-4 w-4" /> +{remaining} more — Show All
+          </>
+        )}
+      </button>
+    );
+  };
+
+  const HistoryCard = ({ msg }: { msg: AaisMessage }) => (
+    <div className="mb-3 rounded-lg bg-card p-4 shadow-sm card-green-border">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${categoryColor[msg.category] || ""}`}>{msg.category}</span>
+        <StatusBadge status={msg.status} />
+        <span className="text-xs text-muted-foreground">Submitted: {msg.created_at}</span>
+        {msg.processed_at && (
+          <span className="text-xs text-muted-foreground">· Processed: {msg.processed_at}</span>
+        )}
+      </div>
+      <p className="mt-2 text-sm leading-relaxed">{msg.message}</p>
+      <FilePreview msg={msg} />
+    </div>
+  );
+
+  const visiblePending = showAllPending ? pending : pending.slice(0, PREVIEW_COUNT);
+  const visibleApproved = showAllApproved ? approvedSolved : approvedSolved.slice(0, PREVIEW_COUNT);
+  const visibleRejected = showAllRejected ? rejectedUnsolved : rejectedUnsolved.slice(0, PREVIEW_COUNT);
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
@@ -88,7 +138,7 @@ const Dashboard = () => {
             {pending.length === 0 && (
               <p className="mb-6 text-center text-sm text-muted-foreground">No pending messages.</p>
             )}
-            {pending.map(msg => (
+            {visiblePending.map(msg => (
               <motion.div
                 key={msg.id}
                 layout
@@ -130,6 +180,7 @@ const Dashboard = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+          {renderShowMore(pending.length, showAllPending, () => setShowAllPending(!showAllPending))}
 
           <h3 className="mb-3 mt-8 text-lg font-bold text-primary">📜 History</h3>
           <p className="mb-4 text-sm text-muted-foreground">Recently processed items</p>
@@ -137,32 +188,24 @@ const Dashboard = () => {
           {approvedSolved.length > 0 && (
             <>
               <h4 className="mb-2 text-sm font-bold text-green-700">✅ Approved / Solved</h4>
-              {approvedSolved.map(msg => (
-                <div key={msg.id} className="mb-3 rounded-lg bg-card p-4 shadow-sm card-green-border">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${categoryColor[msg.category] || ""}`}>{msg.category}</span>
-                    <StatusBadge status={msg.status} />
-                    <span className="text-xs text-muted-foreground">{msg.processed_at}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{msg.message}</p>
-                </div>
-              ))}
+              <ScrollArea className={showAllApproved && approvedSolved.length > 5 ? "max-h-[500px]" : ""}>
+                {visibleApproved.map(msg => (
+                  <HistoryCard key={msg.id} msg={msg} />
+                ))}
+              </ScrollArea>
+              {renderShowMore(approvedSolved.length, showAllApproved, () => setShowAllApproved(!showAllApproved))}
             </>
           )}
 
           {rejectedUnsolved.length > 0 && (
             <>
               <h4 className="mb-2 mt-4 text-sm font-bold text-red-700">❌ Rejected / Unsolved</h4>
-              {rejectedUnsolved.map(msg => (
-                <div key={msg.id} className="mb-3 rounded-lg bg-card p-4 shadow-sm card-green-border">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${categoryColor[msg.category] || ""}`}>{msg.category}</span>
-                    <StatusBadge status={msg.status} />
-                    <span className="text-xs text-muted-foreground">{msg.processed_at}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{msg.message}</p>
-                </div>
-              ))}
+              <ScrollArea className={showAllRejected && rejectedUnsolved.length > 5 ? "max-h-[500px]" : ""}>
+                {visibleRejected.map(msg => (
+                  <HistoryCard key={msg.id} msg={msg} />
+                ))}
+              </ScrollArea>
+              {renderShowMore(rejectedUnsolved.length, showAllRejected, () => setShowAllRejected(!showAllRejected))}
             </>
           )}
 

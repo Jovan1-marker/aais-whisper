@@ -54,12 +54,15 @@ const SubmitCard = () => {
         Your identity is completely hidden. Help us improve our school better by sharing your honest thoughts, suggestions, and concerns.
       </p>
 
+      <label className="mb-1.5 block text-sm font-semibold text-foreground">
+        Choose what type of anonymous message
+      </label>
       <select
         value={category}
         onChange={e => setCategory(e.target.value)}
         className="mb-4 w-full rounded-lg border-2 border-primary/30 bg-card px-4 py-2.5 text-sm font-semibold text-foreground outline-none transition focus:border-primary"
       >
-        <option value="">Choose what type of anonymous message</option>
+        <option value="">— Select —</option>
         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
       </select>
 

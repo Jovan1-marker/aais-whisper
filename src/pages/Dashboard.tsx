@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { getMessages, updateMessageStatus, type AaisMessage } from "@/lib/messages";
+import { getMessages, updateMessageStatus, deleteMessage, purgeOldProcessed, type AaisMessage } from "@/lib/messages";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Download, CheckCircle, XCircle, Wrench, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { FileText, Download, CheckCircle, XCircle, Wrench, AlertTriangle, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 const categoryColor: Record<string, string> = {
   Suggestion: "bg-blue-100 text-blue-800",
@@ -29,7 +29,9 @@ const Dashboard = () => {
       navigate("/admin");
       return;
     }
-    setMessages(getMessages());
+    // Auto-purge history older than 7 days
+    const cleaned = purgeOldProcessed(7);
+    setMessages(cleaned);
   }, [navigate]);
 
   const pending = messages.filter(m => m.status === "pending");
@@ -40,6 +42,12 @@ const Dashboard = () => {
   const handleAction = (id: number, status: AaisMessage["status"]) => {
     const updated = updateMessageStatus(id, status);
     setMessages([...updated]);
+  };
+
+  const handleDelete = (id: number) => {
+    const updated = deleteMessage(id);
+    setMessages([...updated]);
+    toast.success("Message deleted from history.");
   };
 
   const isSolvable = (cat: string) => cat === "Suggestion" || cat === "Concern";
@@ -68,6 +76,13 @@ const Dashboard = () => {
     };
     const s = map[status] || { cls: "bg-gray-100 text-gray-800", label: status };
     return <span className={`rounded-full px-3 py-1 text-xs font-bold ${s.cls}`}>{s.label}</span>;
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-US");
   };
 
   const renderShowMore = (
@@ -102,8 +117,15 @@ const Dashboard = () => {
         <StatusBadge status={msg.status} />
         <span className="text-xs text-muted-foreground">Submitted: {msg.created_at}</span>
         {msg.processed_at && (
-          <span className="text-xs text-muted-foreground">· Processed: {msg.processed_at}</span>
+          <span className="text-xs text-muted-foreground">· Processed: {formatDate(msg.processed_at)}</span>
         )}
+        <button
+          onClick={() => handleDelete(msg.id)}
+          className="ml-auto flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+          title="Delete from history"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> Delete
+        </button>
       </div>
       <p className="mt-2 text-sm leading-relaxed">{msg.message}</p>
       <FilePreview msg={msg} />
@@ -183,16 +205,16 @@ const Dashboard = () => {
           {renderShowMore(pending.length, showAllPending, () => setShowAllPending(!showAllPending))}
 
           <h3 className="mb-3 mt-8 text-lg font-bold text-primary">📜 History</h3>
-          <p className="mb-4 text-sm text-muted-foreground">Recently processed items</p>
+          <p className="mb-4 text-sm text-muted-foreground">Recently processed items · Auto-deleted after 7 days</p>
 
           {approvedSolved.length > 0 && (
             <>
               <h4 className="mb-2 text-sm font-bold text-green-700">✅ Approved / Solved</h4>
-              <ScrollArea className={showAllApproved && approvedSolved.length > 5 ? "max-h-[500px]" : ""}>
+              <div className={showAllApproved ? "max-h-[500px] overflow-y-auto rounded-lg pr-1" : ""}>
                 {visibleApproved.map(msg => (
                   <HistoryCard key={msg.id} msg={msg} />
                 ))}
-              </ScrollArea>
+              </div>
               {renderShowMore(approvedSolved.length, showAllApproved, () => setShowAllApproved(!showAllApproved))}
             </>
           )}
@@ -200,11 +222,11 @@ const Dashboard = () => {
           {rejectedUnsolved.length > 0 && (
             <>
               <h4 className="mb-2 mt-4 text-sm font-bold text-red-700">❌ Rejected / Unsolved</h4>
-              <ScrollArea className={showAllRejected && rejectedUnsolved.length > 5 ? "max-h-[500px]" : ""}>
+              <div className={showAllRejected ? "max-h-[500px] overflow-y-auto rounded-lg pr-1" : ""}>
                 {visibleRejected.map(msg => (
                   <HistoryCard key={msg.id} msg={msg} />
                 ))}
-              </ScrollArea>
+              </div>
               {renderShowMore(rejectedUnsolved.length, showAllRejected, () => setShowAllRejected(!showAllRejected))}
             </>
           )}
